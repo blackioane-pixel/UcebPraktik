@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EventManager — Платформа мероприятий</title>
+    
+    <!-- Критично: ставим тему ДО загрузки стилей, чтобы не было «вспышки» -->
+    <script>
+      (function() {
+        const saved = localStorage.getItem('theme');
+        const system = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        const theme = saved || system;
+        document.documentElement.setAttribute('data-theme', theme);
+      })();
+    </script>
+
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <!-- Overlay для мобильного меню -->
+    <div class="mobile-overlay" id="mobile-overlay"></div>
+
+    <header>
+      <div class="header-inner">
+        <div>
+          <button class="btn-toggle-menu" id="mobile-menu-toggle" aria-expanded="false" aria-label="Меню">
+            <span class="hamburger"></span>
+          </button>
+          <nav id="desktop-nav">
+            <a href="#">Мероприятия</a>
+            <a href="#">Регистрация</a>
+            <a href="#">Отчёты</a>
+          </nav>
+          <ul class="nav-list" id="mobile-nav-list">
+            <li><a href="#">Мероприятия</a></li>
+            <li><a href="#">Регистрация</a></li>
+            <li><a href="#">Отчёты</a></li>
+          </ul>
+        </div>
+        <div class="controls-row">
+          <div class="theme-switcher">
+            <label><input type="radio" name="theme" value="light" /> Light</label>
+            <label><input type="radio" name="theme" value="dark" /> Dark</label>
+            <label><input type="radio" name="theme" value="corporate" /> Corporate</label>
+          </div>
+          <div class="accent-picker-wrapper">
+            <label>Акцент: <input type="color" id="accent-picker" value="#3b82f6" /></label>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <h1>EventManager</h1>
+
+      <!-- Фильтры -->
+      <section>
+        <h2>Фильтры и поиск</h2>
+        <div class="controls-row">
+          <input type="search" id="search" placeholder="Поиск по названию..." />
+          <select id="ticket-type">
+            <option value="">Все типы билетов</option>
+            <option value="vip">VIP</option>
+            <option value="standard">Standard</option>
+            <option value="student">Student</option>
+          </select>
+          <label>
+            <input type="checkbox" name="status" value="paid" checked /> Paid
+          </label>
+          <label>
+            <input type="checkbox" name="status" value="pending" checked /> Pending
+          </label>
+          <label>
+            <input type="checkbox" name="status" value="refunded" checked /> Refunded
+          </label>
+          <button class="btn" id="reset-filters">Сбросить</button>
+        </div>
+      </section>
+
+      <!-- Карточки мероприятий -->
+      <section>
+        <h2>Мероприятия</h2>
+        <div class="events-grid" id="events-container">
+          <!-- Карточки будут рендериться здесь через JS -->
+          <div class="empty-state">Нет мероприятий по текущим фильтрам</div>
+        </div>
+      </section>
+
+      <!-- Таблица регистраций -->
+      <section>
+        <h2>Регистрации (таблица)</h2>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th class="sortable" data-sort="participantName">Участник</th>
+                <th class="sortable" data-sort="ticketType">Билет</th>
+                <th class="sortable" data-sort="status">Статус</th>
+                <th class="sortable" data-sort="date">Дата</th>
+              </tr>
+            </thead>
+            <tbody id="registrations-table-body">
+              <!-- Строки таблицы будут рендериться через JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Форма регистрации -->
+      <section>
+        <h2>Регистрация участника</h2>
+        <form id="registration-form">
+          <div class="form-group">
+            <label for="reg-name">Имя (минимум 3 символа)</label>
+            <input type="text" id="reg-name" name="name" required minlength="3" placeholder="Иван Иванов" />
+            <span class="error-msg"></span>
+          </div>
+          <div class="form-group">
+            <label for="reg-email">Email</label>
+            <input type="email" id="reg-email" name="email" required placeholder="ivan@example.com" />
+            <span class="error-msg"></span>
+          </div>
+          <div class="form-group">
+            <label for="reg-ticket">Тип билета</label>
+            <select id="reg-ticket" name="ticket" required>
+              <option value="" disabled selected>Выберите тип</option>
+              <option value="vip">VIP</option>
+              <option value="standard">Standard</option>
+              <option value="student">Student</option>
+            </select>
+            <span class="error-msg"></span>
+          </div>
+          <button type="submit" class="btn">Зарегистрироваться</button>
+        </form>
+      </section>
+    </main>
+
+    <div id="toast-container"></div>
+
+    <script src="data.js"></script>
+    <script src="script.js"></script>
+     <script src="app.js"></script>
+      <script src="renderer.js"></script>
+  </body>
+</html>
+
+
