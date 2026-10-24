@@ -1,326 +1,321 @@
-// --- Тема и акцент ---
-function getSavedOrSystemTheme() {
-  const saved = localStorage.getItem('theme');
-  if (saved) return saved;
-  const system = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  return system;
-}
+document.addEventListener('DOMContentLoaded', () => {
+  // --- Переключение тем ---
+  const themeRadios = document.querySelectorAll('input[name="theme"]');
+  const body = document.body;
 
-function applyTheme(theme) {
-  document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem('theme', theme);
-
-  document.querySelectorAll('input[name="theme"]').forEach(radio => {
-    radio.checked = radio.value === theme;
-  });
-}
-
-function initThemeSwitcher() {
-  const radios = document.querySelectorAll('input[name="theme"]');
-  radios.forEach(radio => {
+  themeRadios.forEach(radio => {
     radio.addEventListener('change', () => {
-      if (radio.checked) applyTheme(radio.value);
+      const themeValue = radio.value;
+      body.setAttribute('data-theme', themeValue);
     });
   });
-}
 
-function initSystemThemeListener() {
-  const mq = window.matchMedia('(prefers-color-scheme: dark)');
-  function onSystemChange(e) {
-    if (!localStorage.getItem('theme')) {
-      const newTheme = e.matches ? 'dark' : 'light';
-      applyTheme(newTheme);
-    }
+  // --- Переключение вкладок ---
+  const navLinks = document.querySelectorAll('.nav-link');
+  const viewPanes = document.querySelectorAll('.view-pane');
+
+  navLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+
+      // Убираем активный класс у всех ссылок и скрываем все панели
+      navLinks.forEach(l => l.classList.remove('active'));
+      viewPanes.forEach(p => p.classList.add('hidden'));
+
+      // Добавляем активный класс нажатой ссылке и показываем нужную панель
+      link.classList.add('active');
+      const targetView = link.getAttribute('data-view');
+      const targetPane = document.getElementById(targetView + '-view');
+      if (targetPane) {
+        targetPane.classList.remove('hidden');
+      }
+    });
+  });
+
+  // --- Модальное окно: Добавить мероприятие ---
+  const addEventBtn = document.getElementById('add-event-btn');
+  const modalOverlay = document.getElementById('add-event-modal');
+  const closeModalBtn = document.getElementById('modal-close-btn');
+  const addEventForm = document.getElementById('add-event-form');
+
+  function openModal() {
+    modalOverlay.classList.add('show');
+    setTimeout(() => {
+      modalOverlay.style.display = 'flex';
+    }, 50);
   }
-  mq.addEventListener('change', onSystemChange);
-}
 
-function hexToRgb(hex) {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `${r},${g},${b}`;
-}
-
-function updateAccentColor(hex) {
-  const rgb = hexToRgb(hex);
-  document.documentElement.style.setProperty('--color-accent', hex);
-  document.documentElement.style.setProperty('--color-accent-rgb', rgb);
-}
-
-function initAccentColor() {
-  const picker = document.getElementById('accent-picker');
-  if (!picker) return;
-
-  const savedAccent = localStorage.getItem('accent-color');
-  if (savedAccent) {
-    picker.value = savedAccent;
-    updateAccentColor(savedAccent);
+  function closeModal() {
+    modalOverlay.classList.remove('show');
+    setTimeout(() => {
+      modalOverlay.style.display = 'none';
+    }, 250); // Должно совпадать с длительностью transition в CSS
   }
 
-  picker.addEventListener('input', (e) => {
-    const color = e.target.value;
-    localStorage.setItem('accent-color', color);
-    updateAccentColor(color);
-  });
-}
+  if (addEventBtn) addEventBtn.addEventListener('click', openModal);
+  if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
 
-// --- Мобильное меню ---
-function initMobileMenu() {
-  const toggle = document.getElementById('mobile-menu-toggle');
-  const navList = document.getElementById('mobile-nav-list');
-  const overlay = document.getElementById('mobile-overlay');
+  // Закрытие по клику вне окна
+  if (modalOverlay) {
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) {
+        closeModal();
+      }
+    });
+  }
 
-  toggle.addEventListener('click', () => {
-    const isOpen = toggle.getAttribute('aria-expanded') === 'true';
-    toggle.setAttribute('aria-expanded', String(!isOpen));
-    toggle.classList.toggle('active');
-    navList.classList.toggle('active');
-    overlay.classList.toggle('active');
-  });
+  // Обработка отправки формы добавления мероприятия
+  if (addEventForm) {
+    addEventForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const formData = new FormData(addEventForm);
+      const name = formData.get('name');
+      const date = formData.get('date');
+      const time = formData.get('start_time');
+      const desc = formData.get('description');
 
-  overlay.addEventListener('click', () => {
-    toggle.setAttribute('aria-expanded', 'false');
-    toggle.classList.remove('active');
-    navList.classList.remove('active');
-    overlay.classList.remove('active');
-  });
-}
+      console.log('Добавлено мероприятие:', { name, date, time, desc });
 
-// --- Тосты ---
-function showToast(message, type = 'info') {
-  const container = document.getElementById('toast-container');
-  const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
-  toast.textContent = message;
-  container.appendChild(toast);
+      showToast(`Мероприятие "${name}" успешно добавлено!`);
+      closeModal();
+      addEventForm.reset();
+    });
+  }
 
+  // --- Тосты (уведомления) ---
+  function showToast(message) {
+    const toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) return;
+
+    const toast = document.createElement('div');
+    toast.textContent = message;
+    toast.className = 'toast';
+    toastContainer.appendChild(toast);
+
+    setTimeout(() => {
+      toast.remove();
+    }, 3000);
+  }
+
+  // --- Пример: заполнение таблицы регистрации (демо) ---
+  const regTableBody = document.getElementById('registrations-table-body');
+  if (regTableBody) {
+    const demoData = [
+      { name: 'Анна Петрова', type: 'VIP', status: 'Confirmed', date: '2025-11-10' },
+      { name: 'Иван Сидоров', type: 'Standard', status: 'Pending', date: '2025-11-12' },
+    ];
+
+    demoData.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${row.name}</td>
+        <td>${row.type}</td>
+        <td>${row.status}</td>
+        <td>${row.date}</td>
+        <td><button class="btn btn-outline" style="padding:4px 8px;">Удалить</button></td>
+      `;
+      regTableBody.appendChild(tr);
+    });
+  }
+});
+// --- Покупка билета: модалка подтверждения ---
+const purchaseModal = document.getElementById('purchase-modal');
+const purchaseCloseBtn = document.getElementById('purchase-close-btn');
+const purchasePayBtn = document.getElementById('purchase-pay-btn');
+const purchaseCancelBtn = document.getElementById('purchase-cancel-btn');
+const purchaseDetails = document.getElementById('purchase-details');
+
+function openPurchaseModal(ticketType, price, eventName) {
+  purchaseDetails.innerHTML = `
+    <p><strong>Мероприятие:</strong> ${escapeHtml(eventName)}</p>
+    <p><strong>Тип билета:</strong> ${escapeHtml(ticketType)}</p>
+    <p style="font-size:1.2rem; font-weight:bold;">${price}</p>
+  `;
+  purchaseModal.classList.add('show');
   setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateX(100%)';
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
+    purchaseModal.style.display = 'flex';
+  }, 50);
 }
 
-// --- Фильтры и сортировка ---
-let currentSort = { col: 'participantName', dir: 'asc' };
-
-function applyFiltersAndRender() {
-  renderEvents();
-  renderRegistrations();
+function closePurchaseModal() {
+  purchaseModal.classList.remove('show');
+  setTimeout(() => {
+    purchaseModal.style.display = 'none';
+  }, 250);
 }
 
-function renderEvents() {
-  const search = document.getElementById('search').value.toLowerCase();
-  const ticketType = document.getElementById('ticket-type').value;
-  const statusCheckboxes = Array.from(document.querySelectorAll('input[name="status"]'))
-    .filter(cb => cb.checked).map(cb => cb.value);
+if (purchaseCloseBtn) purchaseCloseBtn.addEventListener('click', closePurchaseModal);
+if (purchaseCancelBtn) purchaseCancelBtn.addEventListener('click', closePurchaseModal);
 
-  const filtered = eventsData.filter(e => {
-    const matchSearch = e.title.toLowerCase().includes(search);
-    // Упрощённо: считаем, что ticketType совпадает с каким-то тегом
-    const matchTicket = !ticketType || e.tags.includes(ticketType);
-    const matchStatus = statusCheckboxes.length === 0 || statusCheckboxes.includes(e.status);
-    return matchSearch && matchTicket && matchStatus;
+if (purchasePayBtn) {
+  purchasePayBtn.addEventListener('click', () => {
+    // Имитация перехода на платёжную страницу
+    showToast('Переход на платёжную систему…');
+    // Вариант А: открыть новую вкладку с заглушкой
+    window.open('/payment-page.html?type=confirmed', '_blank');
+    closePurchaseModal();
+    // Вариант Б (альтернатива): просто редирект (закомментируй, если не нужен)
+    // window.location.href = '/payment-page.html?type=confirmed';
   });
+}
 
-  const container = document.getElementById('events-container');
-  container.innerHTML = '';
+// Обработчики кнопок «Купить» в карточках билетов
+document.querySelectorAll('.tickets-grid a[href^="/payment"]').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.preventDefault(); // Отменяем обычный переход по ссылке
 
-  if (filtered.length === 0) {
-    container.innerHTML = '<div class="empty-state">Нет мероприятий по текущим фильтрам</div>';
-    return;
-  }
+    // Парсим параметры из href (например: /payment?type=standard&event=techmeetup)
+    const url = new URL(btn.href, window.location.origin);
+    const type = url.searchParams.get('type') || 'Unknown';
+    const event = url.searchParams.get('event') || 'Неизвестно';
 
-  filtered.forEach(e => {
-    const card = document.createElement('article');
-    card.className = 'event-card';
+    let price = '0 ₽';
+    if (type === 'standard') price = '1 500 ₽';
+    else if (type === 'vip') price = '3 000 ₽';
+    else if (type === 'student') price = '900 ₽';
 
-    const statusClass = `status-${e.status}`;
-    const dateFormatted = new Date(e.date).toLocaleDateString('ru-RU', {
-      day: 'numeric', month: 'long', year: 'numeric'
+    openPurchaseModal(type, price, getEventNameByCode(event));
+  });
+});
+
+function getEventNameByCode(code) {
+  const map = {
+    'techmeetup': 'TechMeetup: Frontend тренды',
+    'vip-dinner': 'VIP‑ужин для партнёров',
+    'hackathon': 'Студенческий хакатон'
+  };
+  return map[code] || code;
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+// --- Фильтры и поиск ---
+const eventsSearch = document.getElementById('events-search');
+const typeSelectTrigger = document.getElementById('type-select-trigger');
+const typeOptionsList = document.getElementById('type-options-list');
+const typeSelectText = document.getElementById('type-select-text');
+const formatCheckboxes = document.querySelectorAll('input[name="format"]');
+const viewModeRadios = document.querySelectorAll('input[name="view-mode"]');
+const resetBtn = document.getElementById('filters-reset-btn');
+const eventsContainer = document.getElementById('events-container');
+
+let selectedType = 'all';
+let selectedFormats = [];
+let viewMode = 'grid';
+
+// Поиск
+if (eventsSearch) {
+  eventsSearch.addEventListener('input', applyFilters);
+}
+
+// Кастомный select
+if (typeSelectTrigger) {
+  typeSelectTrigger.addEventListener('click', () => {
+    typeOptionsList.classList.toggle('show');
+  });
+}
+
+if (typeOptionsList) {
+  typeOptionsList.querySelectorAll('.custom-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      selectedType = opt.dataset.value;
+      typeSelectText.textContent = opt.textContent;
+      typeOptionsList.classList.remove('show');
+      applyFilters();
     });
-
-    card.innerHTML = `
-      <div class="card-header">
-        <h3>${e.title}</h3>
-        <span class="status-badge ${statusClass}">${e.status}</span>
-      </div>
-      <p class="date-badge">${dateFormatted}</p>
-      <ul class="tags-list">
-        ${e.tags.map(t => `<li>${t}</li>`).join('')}
-      </ul>
-    `;
-    container.appendChild(card);
   });
-}
 
-function sortData(data, col, dir) {
-  return [...data].sort((a, b) => {
-    const valA = a[col];
-    const valB = b[col];
-    if (typeof valA === 'string' && typeof valB === 'string') {
-      return dir === 'asc'
-        ? valA.localeCompare(valB, 'ru')
-        : valB.localeCompare(valA, 'ru');
+  // Закрытие по клику вне
+  document.addEventListener('click', (e) => {
+    if (!typeSelectWrapper.contains(e.target)) {
+      typeOptionsList.classList.remove('show');
     }
-    return dir === 'asc' ? valA - valB : valB - valA;
   });
 }
 
-function renderRegistrations() {
-  const search = document.getElementById('search').value.toLowerCase();
-  const ticketType = document.getElementById('ticket-type').value;
-  const statusCheckboxes = Array.from(document.querySelectorAll('input[name="status"]'))
-    .filter(cb => cb.checked).map(cb => cb.value);
+const typeSelectWrapper = document.getElementById('type-select-wrapper');
 
-  let filtered = registrationsData.filter(r => {
-    const matchSearch = r.participantName.toLowerCase().includes(search) || r.ticketType.includes(search);
-    const matchTicket = !ticketType || r.ticketType === ticketType;
-    const matchStatus = statusCheckboxes.length === 0 || statusCheckboxes.includes(r.status);
-    return matchSearch && matchTicket && matchStatus;
+// Чекбоксы форматов
+formatCheckboxes.forEach(cb => {
+  cb.addEventListener('change', () => {
+    selectedFormats = Array.from(formatCheckboxes)
+      .filter(c => c.checked)
+      .map(c => c.value);
+    applyFilters();
   });
+});
 
-  // Сортировка
-  filtered = sortData(filtered, currentSort.col, currentSort.dir);
-
-  const tbody = document.getElementById('registrations-table-body');
-  tbody.innerHTML = '';
-
-  if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="4" class="empty-state" style="border:none">Нет регистраций по фильтрам</td></tr>`;
-    return;
-  }
-
-  filtered.forEach(r => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td data-label="Участник">${r.participantName}</td>
-      <td data-label="Билет">${r.ticketType}</td>
-      <td data-label="Статус">${r.status}</td>
-      <td data-label="Дата">${r.date}</td>
-    `;
-    tbody.appendChild(tr);
+// Радио: вид отображения
+viewModeRadios.forEach(rb => {
+  rb.addEventListener('change', () => {
+    viewMode = rb.value;
+    applyFilters();
   });
-}
+});
 
-function initFiltersAndSort() {
-  const search = document.getElementById('search');
-  const ticketType = document.getElementById('ticket-type');
-  const statusCheckboxes = document.querySelectorAll('input[name="status"]');
-  const resetBtn = document.getElementById('reset-filters');
-  const sortableHeaders = document.querySelectorAll('.sortable');
+// Сброс фильтров
+if (resetBtn) {
+  resetBtn.addEventListener('click', () => {
+    eventsSearch.value = '';
+    selectedType = 'all';
+    typeSelectText.textContent = 'Все типы';
+    typeOptionsList.classList.remove('show');
 
-  if (search) search.addEventListener('input', applyFiltersAndRender);
-  if (ticketType) ticketType.addEventListener('change', applyFiltersAndRender);
-  statusCheckboxes.forEach(cb => cb.addEventListener('change', applyFiltersAndRender));
-
-  if (resetBtn) {
-    resetBtn.addEventListener('click', () => {
-      search.value = '';
-      ticketType.value = '';
-      statusCheckboxes.forEach(cb => cb.checked = cb.defaultChecked);
-      applyFiltersAndRender();
+    formatCheckboxes.forEach(cb => {
+      cb.checked = false;
     });
-  }
+    selectedFormats = [];
 
-  sortableHeaders.forEach(header => {
-    header.addEventListener('click', () => {
-      const col = header.getAttribute('data-sort');
-      // Обновляем классы для стрелки сортировки
-      sortableHeaders.forEach(h => h.classList.remove('asc', 'desc'));
-      if (currentSort.col === col) {
-        currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+    const defaultRadio = document.querySelector('input[name="view-mode"][value="grid"]');
+    if (defaultRadio) {
+      defaultRadio.checked = true;
+      viewMode = 'grid';
+    }
+
+    applyFilters();
+  });
+}
+
+function applyFilters() {
+  const searchTerm = (eventsSearch?.value || '').toLowerCase().trim();
+
+  const cards = Array.from(eventsContainer.querySelectorAll('.event-card'));
+  cards.forEach(card => {
+    const title = card.querySelector('h3')?.textContent?.toLowerCase() || '';
+    const desc = card.querySelector('p')?.textContent?.toLowerCase() || '';
+
+    // Простая эмуляция типа и формата из текста карточки
+    const hasSearch = !searchTerm || title.includes(searchTerm) || desc.includes(searchTerm);
+
+    // Здесь можно хранить тип/формат в data-атрибутах, чтобы фильтровать точнее
+    // Для демо будем считать, что тип есть в заголовке
+    const isType = selectedType === 'all' || title.includes(selectedType) || title.includes(['conference','workshop','meetup','hackathon','bootcamp'].find(t => t === selectedType));
+
+    // Формат — пока упрощённо: если ни один не выбран, показываем всё
+    const isFormat = selectedFormats.length === 0 || selectedFormats.some(f => title.includes(f) || desc.includes(f));
+
+    if (hasSearch && isType && isFormat) {
+      card.style.display = viewMode === 'grid' ? 'block' : 'flex';
+      // Для списка удобно использовать flex или block с margin
+      if (viewMode === 'list') {
+        card.style.marginBottom = '12px';
+        card.style.border = '1px solid var(--border-main)';
+        card.style.padding = '12px';
       } else {
-        currentSort = { col, dir: 'asc' };
+        card.style.marginBottom = '';
+        card.style.border = '';
+        card.style.padding = '';
       }
-      header.classList.add(currentSort.dir);
-      renderRegistrations();
-    });
+      card.style.opacity = '1';
+    } else {
+      card.style.display = 'none';
+    }
   });
 }
-
-function initFormValidation() {
-  const form = document.getElementById('registration-form');
-  if (!form) return;
-
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-
-    const nameInput = document.getElementById('reg-name');
-    const emailInput = document.getElementById('reg-email');
-    const ticketInput = document.getElementById('reg-ticket');
-
-    // Сброс ошибок
-    [nameInput, emailInput, ticketInput].forEach(input => {
-      input.classList.remove('invalid');
-      const errorSpan = input.nextElementSibling;
-      if (errorSpan && errorSpan.classList.contains('error-msg')) {
-        errorSpan.textContent = '';
-      }
-    });
-
-    let isValid = true;
-
-    // Валидация имени
-    if (!nameInput.value || nameInput.value.trim().length < 3) {
-      nameInput.classList.add('invalid');
-      const errorSpan = nameInput.nextElementSibling;
-      if (errorSpan) errorSpan.textContent = 'Имя должно быть не короче 3 символов';
-      isValid = false;
-    }
-
-    // Валидация email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(emailInput.value)) {
-      emailInput.classList.add('invalid');
-      const errorSpan = emailInput.nextElementSibling;
-      if (errorSpan) errorSpan.textContent = 'Введите корректный email';
-      isValid = false;
-    }
-
-    // Валидация билета
-    if (!ticketInput.value) {
-      ticketInput.classList.add('invalid');
-      const errorSpan = ticketInput.nextElementSibling;
-      if (errorSpan) errorSpan.textContent = 'Выберите тип билета';
-      isValid = false;
-    }
-
-    if (!isValid) {
-      showToast('Исправьте ошибки в форме', 'error');
-      return;
-    }
-
-    // Успешная регистрация (имитация)
-    const newRegistration = {
-      participantName: nameInput.value.trim(),
-      ticketType: ticketInput.value,
-      status: 'pending',
-      date: new Date().toISOString().split('T')[0],
-    };
-
-    registrationsData.push(newRegistration);
-    renderRegistrations();
-    showToast('Участник успешно зарегистрирован!', 'success');
-
-    form.reset();
-  });
-}
-
-// --- Инициализация всех компонентов ---
-function init() {
-  initThemeSwitcher();
-  initSystemThemeListener();
-  initAccentColor();
-  initMobileMenu();
-  initFiltersAndSort();
-  initFormValidation();
-
-  // Первоначальный рендер
-  renderEvents();
-  renderRegistrations();
-}
-
-// Запуск после загрузки DOM
-document.addEventListener('DOMContentLoaded', init);
