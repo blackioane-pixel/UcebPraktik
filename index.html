@@ -1,148 +1,266 @@
 <!DOCTYPE html>
-<html lang="ru" data-theme="light">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>EventManager — Платформа мероприятий</title>
-    
-    <!-- Критично: ставим тему ДО загрузки стилей, чтобы не было «вспышки» -->
-    <script>
-      (function() {
-        const saved = localStorage.getItem('theme');
-        const system = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        const theme = saved || system;
-        document.documentElement.setAttribute('data-theme', theme);
-      })();
-    </script>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EventManager</title>
+  <!-- Сюда позже подключим CSS -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-theme="light">
 
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <!-- Overlay для мобильного меню -->
-    <div class="mobile-overlay" id="mobile-overlay"></div>
+  <header>
+    <div class="header-inner">
+      <a href="#" class="logo-centered">EventManager</a>
 
-    <header>
-      <div class="header-inner">
-        <div>
-          <button class="btn-toggle-menu" id="mobile-menu-toggle" aria-expanded="false" aria-label="Меню">
-            <span class="hamburger"></span>
-          </button>
-          <nav id="desktop-nav">
-            <a href="#">Мероприятия</a>
-            <a href="#">Регистрация</a>
-            <a href="#">Отчёты</a>
-          </nav>
-          <ul class="nav-list" id="mobile-nav-list">
-            <li><a href="#">Мероприятия</a></li>
-            <li><a href="#">Регистрация</a></li>
-            <li><a href="#">Отчёты</a></li>
-          </ul>
-        </div>
-        <div class="controls-row">
-          <div class="theme-switcher">
-            <label><input type="radio" name="theme" value="light" /> Light</label>
-            <label><input type="radio" name="theme" value="dark" /> Dark</label>
-            <label><input type="radio" name="theme" value="corporate" /> Corporate</label>
-          </div>
-          <div class="accent-picker-wrapper">
-            <label>Акцент: <input type="color" id="accent-picker" value="#3b82f6" /></label>
-          </div>
+      <div class="header-left">
+        <button class="btn-toggle-menu" id="mobile-menu-toggle" aria-expanded="false" aria-label="Меню">
+          <span class="hamburger">≡</span>
+        </button>
+        <nav id="desktop-nav">
+          <a href="#" data-view="events" class="nav-link active">Мероприятия</a>
+          <a href="#" data-view="registrations" class="nav-link">Регистрация</a>
+          <a href="#" data-view="schedule" class="nav-link">Расписание</a>
+          <a href="#" data-view="tickets" class="nav-link">Билеты</a>
+        </nav>
+      </div>
+
+      <div class="header-right">
+        <div class="theme-switcher">
+          <label><input type="radio" name="theme" value="light" checked /> Light</label>
+          <label><input type="radio" name="theme" value="dark" /> Dark</label>
+          <label><input type="radio" name="theme" value="corporate" /> Corporate</label>
         </div>
       </div>
-    </header>
+    </div>
+  </header>
 
-    <main class="container">
-      <h1>EventManager</h1>
+  <main>
+    <!-- Панель: Мероприятия -->
+    <div id="events-view" class="view-pane">
+      <div class="controls-row">
+        <input type="search" id="events-search" placeholder="Поиск по названию..." />
+        <button type="button" id="add-event-btn" class="btn btn-primary">+ Добавить мероприятие</button>
+      </div>
+      <div id="events-container" class="events-grid"></div>
+    </div>
 
-      <!-- Фильтры -->
-      <section>
-        <h2>Фильтры и поиск</h2>
-        <div class="controls-row">
-          <input type="search" id="search" placeholder="Поиск по названию..." />
-          <select id="ticket-type">
-            <option value="">Все типы билетов</option>
-            <option value="vip">VIP</option>
-            <option value="standard">Standard</option>
-            <option value="student">Student</option>
-          </select>
-          <label>
-            <input type="checkbox" name="status" value="paid" checked /> Paid
-          </label>
-          <label>
-            <input type="checkbox" name="status" value="pending" checked /> Pending
-          </label>
-          <label>
-            <input type="checkbox" name="status" value="refunded" checked /> Refunded
-          </label>
-          <button class="btn" id="reset-filters">Сбросить</button>
-        </div>
-      </section>
-
-      <!-- Карточки мероприятий -->
-      <section>
-        <h2>Мероприятия</h2>
-        <div class="events-grid" id="events-container">
-          <!-- Карточки будут рендериться здесь через JS -->
-          <div class="empty-state">Нет мероприятий по текущим фильтрам</div>
-        </div>
-      </section>
-
-      <!-- Таблица регистраций -->
-      <section>
-        <h2>Регистрации (таблица)</h2>
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th class="sortable" data-sort="participantName">Участник</th>
-                <th class="sortable" data-sort="ticketType">Билет</th>
-                <th class="sortable" data-sort="status">Статус</th>
-                <th class="sortable" data-sort="date">Дата</th>
-              </tr>
-            </thead>
-            <tbody id="registrations-table-body">
-              <!-- Строки таблицы будут рендериться через JS -->
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- Форма регистрации -->
-      <section>
-        <h2>Регистрация участника</h2>
-        <form id="registration-form">
-          <div class="form-group">
-            <label for="reg-name">Имя (минимум 3 символа)</label>
-            <input type="text" id="reg-name" name="name" required minlength="3" placeholder="Иван Иванов" />
-            <span class="error-msg"></span>
+    <!-- Панель: Регистрация -->
+    <div id="registrations-view" class="view-pane hidden">
+      <div class="controls-row">
+        <h2 style="margin:0; font-size:1.2rem;">Регистрация участников</h2>
+      </div>
+      <form id="registration-form" class="event-card">
+        <div class="form-row" style="display:flex; gap:var(--sp-2); flex-wrap:wrap;">
+          <div class="form-group" style="flex:1; min-width:200px;">
+            <label>Имя участника</label>
+            <input type="text" id="reg-name" required placeholder="Анна Петрова" />
           </div>
-          <div class="form-group">
-            <label for="reg-email">Email</label>
-            <input type="email" id="reg-email" name="email" required placeholder="ivan@example.com" />
-            <span class="error-msg"></span>
-          </div>
-          <div class="form-group">
-            <label for="reg-ticket">Тип билета</label>
-            <select id="reg-ticket" name="ticket" required>
-              <option value="" disabled selected>Выберите тип</option>
-              <option value="vip">VIP</option>
+          <div class="form-group" style="flex:1; min-width:200px;">
+            <label>Тип билета</label>
+            <select id="reg-ticket-type">
               <option value="standard">Standard</option>
+              <option value="vip">VIP</option>
               <option value="student">Student</option>
             </select>
-            <span class="error-msg"></span>
           </div>
-          <button type="submit" class="btn">Зарегистрироваться</button>
-        </form>
-      </section>
-    </main>
+          <div class="form-group" style="flex:1; min-width:200px;">
+            <label>Статус</label>
+            <select id="reg-status">
+              <option value="pending">Pending</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%">Зарегистрировать</button>
+      </form>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Участник</th>
+              <th>Тип билета</th>
+              <th>Статус</th>
+              <th>Дата регистрации</th>
+              <th>Действие</th>
+            </tr>
+          </thead>
+          <tbody id="registrations-table-body"></tbody>
+        </table>
+      </div>
+    </div>
 
-    <div id="toast-container"></div>
+    <!-- Панель: Расписание -->
+    <div id="schedule-view" class="view-pane hidden">
+      <div class="controls-row">
+        <label>Фильтр по дате:</label>
+        <input type="date" id="schedule-filter-date" />
+        <button type="button" id="reset-schedule-btn" class="btn btn-outline">Сбросить</button>
+      </div>
+      <div id="schedule-content"></div>
+    </div>
 
-    <script src="data.js"></script>
-    <script src="script.js"></script>
+    <!-- Панель: Билеты -->
+    <div id="tickets-view" class="view-pane hidden">
+      <div class="controls-row">
+        <h2 style="margin:0; font-size:1.2rem;">Покупка билетов</h2>
+      </div>
+      <p>Выберите мероприятие и тип билета для покупки.</p>
+      <div class="form-group" style="max-width:400px; margin-bottom:1rem;">
+        <label for="ticket-event-select">Мероприятие</label>
+        <select id="ticket-event-select">
+          <option value="" disabled selected>Выберите мероприятие</option>
+          <option value="techmeetup">TechMeetup: Frontend тренды</option>
+          <option value="vip-dinner">VIP‑ужин для партнёров</option>
+          <option value="hackathon">Студенческий хакатон</option>
+        </select>
+      </div>
+      <div class="tickets-grid" id="tickets-options-container">
+        <div class="ticket-card">
+          <h3>Standard</h3>
+          <p>Доступ ко всем зонам, базовый пакет.</p>
+          <p style="font-weight:bold; font-size:1.1rem;">1 500 ₽</p>
+          <a href="/payment?type=standard&event=techmeetup" class="btn btn-primary" style="display:inline-block; text-decoration:none; color:white; padding:0.5rem 1rem; border-radius:6px;">Купить</a>
+        </div>
+        <div class="ticket-card">
+          <h3>VIP</h3>
+          <p>Отдельная зона, ранний вход, подарок.</p>
+          <p style="font-weight:bold; font-size:1.1rem;">3 000 ₽</p>
+          <a href="/payment?type=vip&event=techmeetup" class="btn btn-primary" style="display:inline-block; text-decoration:none; color:white; padding:0.5rem 1rem; border-radius:6px;">Купить</a>
+        </div>
+        <div class="ticket-card">
+          <h3>Student</h3>
+          <p>Льготный билет при предъявлении студенческого.</p>
+          <p style="font-weight:bold; font-size:1.1rem;">900 ₽</p>
+          <a href="/payment?type=student&event=techmeetup" class="btn btn-primary" style="display:inline-block; text-decoration:none; color:white; padding:0.5rem 1rem; border-radius:6px;">Купить</a>
+        </div>
+      </div>
+    </div>
+  </main>
+<section class="filters-panel">
+  <h3 class="panel-title">Фильтры</h3>
+
+  <!-- Текстовый поиск -->
+  <div class="filter-group">
+    <label for="events-search" class="filter-label">Поиск по названию</label>
+    <input type="search" id="events-search" placeholder="Например: frontend, data" />
+  </div>
+
+  <!-- Кастомный выпадающий список -->
+  <div class="filter-group">
+    <label class="filter-label">Тип мероприятия</label>
+    <div class="custom-select-wrapper" id="type-select-wrapper">
+      <div class="custom-select-trigger" id="type-select-trigger">
+        <span id="type-select-text">Все типы</span>
+        <span class="custom-arrow">▼</span>
+      </div>
+      <div class="custom-options-list" id="type-options-list">
+        <div class="custom-option" data-value="all">Все типы</div>
+        <div class="custom-option" data-value="conference">Конференция</div>
+        <div class="custom-option" data-value="workshop">Мастер‑класс</div>
+        <div class="custom-option" data-value="meetup">Meetup</div>
+        <div class="custom-option" data-value="hackathon">Хакатон</div>
+        <div class="custom-option" data-value="bootcamp">Bootcamp</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Чекбоксы множественного выбора (кастомные) -->
+  <div class="filter-group">
+    <label class="filter-label">Форматы участия</label>
+    <div class="checkbox-group">
+      <label class="custom-checkbox-label">
+        <input type="checkbox" name="format" value="online" class="custom-checkbox-input" />
+        <span class="custom-checkmark"></span>
+        Онлайн
+      </label>
+      <label class="custom-checkbox-label">
+        <input type="checkbox" name="format" value="offline" class="custom-checkbox-input" />
+        <span class="custom-checkmark"></span>
+        Офлайн
+      </label>
+      <label class="custom-checkbox-label">
+        <input type="checkbox" name="format" value="hybrid" class="custom-checkbox-input" />
+        <span class="custom-checkmark"></span>
+        Гибрид
+      </label>
+    </div>
+  </div>
+
+  <!-- Радио-кнопки для переключения вида -->
+  <div class="filter-group">
+    <label class="filter-label">Вид отображения</label>
+    <div class="radio-group">
+      <label class="custom-radio-label">
+        <input type="radio" name="view-mode" value="grid" class="custom-radio-input" checked />
+        <span class="custom-radio-dot"></span>
+        Сетка
+      </label>
+      <label class="custom-radio-label">
+        <input type="radio" name="view-mode" value="list" class="custom-radio-input" />
+        <span class="custom-radio-dot"></span>
+        Список
+      </label>
+    </div>
+  </div>
+
+  <!-- Кнопка сброса -->
+  <button type="button" id="filters-reset-btn" class="btn btn-outline">Сбросить фильтры</button>
+</section>
+
+  <!-- Модалка: Добавить мероприятие -->
+  <div id="add-event-modal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Добавить мероприятие</h3>
+        <button type="button" class="modal-close" id="modal-close-btn">&times;</button>
+      </div>
+      <form id="add-event-form">
+        <div class="form-group">
+          <label>Название мероприятия</label>
+          <input type="text" name="name" required placeholder="TechMeetup 2025" />
+        </div>
+        <div class="form-group">
+          <label>Дата</label>
+          <input type="date" name="date" required />
+        </div>
+        <div class="form-group">
+          <label>Время начала</label>
+          <input type="time" name="start_time" required />
+        </div>
+        <div class="form-group">
+          <label>Описание</label>
+          <textarea name="description" rows="3" placeholder="Расскажите про событие..."></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;">Сохранить</button>
+      </form>
+    </div>
+  </div>
+  <!-- Модалка подтверждения покупки -->
+<div id="purchase-modal" class="modal-overlay">
+  <div class="modal-content" style="max-width: 400px;">
+    <div class="modal-header">
+      <h3>Подтверждение покупки</h3>
+      <button type="button" class="modal-close" id="purchase-close-btn">&times;</button>
+    </div>
+    <div id="purchase-details">
+      <!-- Сюда JS подставит детали -->
+    </div>
+    <div style="margin-top: var(--sp-2); display:flex; gap:var(--sp-2);">
+      <button type="button" id="purchase-pay-btn" class="btn btn-primary" style="flex:1;">Оплатить</button>
+      <button type="button" id="purchase-cancel-btn" class="btn btn-outline" style="flex:1;">Отмена</button>
+    </div>
+  </div>
+</div>
+
+  <div id="toast-container"></div>
+  <script src="script.js"></script>
+  <script src="data.js"></script>
      <script src="app.js"></script>
       <script src="renderer.js"></script>
-  </body>
+</body>
 </html>
+
 
 
