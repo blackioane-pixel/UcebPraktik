@@ -1,9 +1,19 @@
 const eventsData = [
-  { id: 1, title: 'Frontend Meetup', date: '2025-11-10', status: 'confirmed', tags: ['meetup', 'frontend'] },
-  { id: 2, title: 'Design Sprint', date: '2025-11-12', status: 'draft', tags: ['design', 'sprint'] },
+  { id: 1, title: 'Frontend Meetup', date: '2025-11-10', status: 'confirmed', tags: ['meetup', 'frontend'], format: 'online' },
+  { id: 2, title: 'Design Sprint', date: '2025-11-12', status: 'draft', tags: ['design', 'sprint'], format: 'hybrid'},
   { id: 3, title: 'Hackathon Weekend', date: '2025-11-15', status: 'confirmed', tags: ['hackathon', 'coding'] },
-  { id: 4, title: 'Tech Talk: AI', date: '2025-11-20', status: 'cancelled', tags: ['ai', 'talk'] },
-  { id: 5, title: 'UX Workshop', date: '2025-11-22', status: 'confirmed', tags: ['ux', 'workshop'] },
+  { id: 4, title: 'Tech Talk: AI', date: '2025-11-20', status: 'cancelled', tags: ['ai', 'talk'], format: 'hybrid' },
+  { id: 5, title: 'QA & Testing Day', date: '2025-11-22', status: 'confirmed', tags: ['ux', 'workshop'] },
+  { id: 6, title: 'AI & ML Bootcamp', date: '2025-11-22', status: 'confirmed', tags: ['ux', 'workshop'] },
+  { id: 7, title: 'Product Management Meetup', date: '2025-11-22', status: 'confirmed', tags: ['ux', 'workshop'] },
+  { id: 8, title: 'Cybersecurity Talk', date: '2025-11-22', status: 'confirmed', tags: ['ux', 'workshop'] },
+  { id: 9, title: 'GameDev Jam', date: '2025-11-22', status: 'confirmed', tags: ['ux', 'workshop'] },
+  { id: 10, title: 'Web Accessibility Workshop', date: '2025-11-22', status: 'confirmed', tags: ['ux', 'workshop'] },
+  { id: 11, title: 'Agile & Scrum Deep Dive', date: '2025-11-22', status: 'confirmed', tags: ['ux', 'workshop'] },
+  { id: 12, title: 'UX Workshop', date: '2025-11-22', status: 'confirmed', tags: ['ux', 'workshop'] },
+  { id: 13, title: 'UX Workshop', date: '2025-11-22', status: 'confirmed', tags: ['ux', 'workshop'] },
+  { id: 14, title: 'UX Workshop', date: '2025-11-22', status: 'confirmed', tags: ['ux', 'workshop'] },
+  { id: 15, title: 'UX Workshop', date: '2025-11-22', status: 'confirmed', tags: ['ux', 'workshop'] },
 ];
 
 const registrationsData = [
