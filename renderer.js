@@ -63,6 +63,88 @@ export function renderRegistrations() {
     tbody.appendChild(tr);
   });
 }
+function renderSchedule() {
+  const content = document.getElementById('schedule-content');
+  if (!content) return;
+  content.innerHTML = '';
+
+  const grouped = {};
+  eventsData.forEach(e => {
+    if (!grouped[e.date]) grouped[e.date] = [];
+    grouped[e.date].push(e);
+  });
+
+  Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).forEach(([date, events]) => {
+    const block = document.createElement('div');
+    block.className = 'schedule-day-block';
+    const dayDate = new Date(date).toLocaleDateString('ru-RU');
+
+    block.innerHTML = `
+      <div class="schedule-day-header">
+        <span class="day-date">${dayDate}</span>
+        <span class="day-total">${events.length} событий</span>
+      </div>
+      ${events.map(e => `
+        <div class="event-in-schedule">
+          <div class="time-col">
+            ${e.startTime}–${e.endTime}
+          </div>
+          <div class="title-col">
+            <strong>${escapeHtml(e.title)}</strong>
+            <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:2px;">
+              Статус: ${e.status}
+            </div>
+          </div>
+          <span class="status-badge-sm ${e.status === 'confirmed' ? 'status-confirmed' : (e.status === 'cancelled' ? 'status-cancelled' : 'status-draft')}">
+            ${e.status}
+          </span>
+        </div>
+      `).join('')}
+    `;
+    content.appendChild(block);
+  });
+}
+function renderScheduleFiltered(dateFilter) {
+  const content = document.getElementById('schedule-content');
+  if (!content) return;
+  content.innerHTML = '';
+
+  const filtered = dateFilter
+    ? eventsData.filter(e => e.date === dateFilter)
+    : eventsData;
+
+  if (filtered.length === 0) {
+    content.innerHTML = '<div style="padding:1rem; text-align:center; color:var(--text-muted);">Нет событий на эту дату</div>';
+    return;
+  }
+
+  const grouped = {};
+  filtered.forEach(e => {
+    if (!grouped[e.date]) grouped[e.date] = [];
+    grouped[e.date].push(e);
+  });
+
+  Object.entries(grouped).forEach(([date, events]) => {
+    const block = document.createElement('div');
+    block.className = 'schedule-day-block';
+    const dayDate = new Date(date).toLocaleDateString('ru-RU');
+    block.innerHTML = `
+      <div class="schedule-day-header">
+        <span class="day-date">${dayDate}</span>
+        <span class="day-total">${events.length} событий</span>
+      </div>
+      ${events.map(e => `
+        <div class="event-in-schedule">
+          <div class="time-col">${e.startTime}–${e.endTime}</div>
+          <div class="title-col"><strong>${escapeHtml(e.title)}</strong></div>
+          <span class="status-badge-sm ${e.status === 'confirmed' ? 'status-confirmed' : (e.status === 'cancelled' ? 'status-cancelled' : 'status-draft')}">${e.status}</span>
+        </div>
+      `).join('')}
+    `;
+    content.appendChild(block);
+  });
+}
+
 
 
 
